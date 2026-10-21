@@ -1,6 +1,7 @@
 # Local build outputs and signing material
 android/build/
 *.apk
+*.apk.idsig
 *.aab
 *.jks
 *.keystore
