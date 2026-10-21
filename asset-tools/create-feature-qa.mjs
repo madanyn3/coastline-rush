@@ -1,0 +1,10 @@
+import fs from 'node:fs';const base='coast-rush/dist/';
+let script=fs.readFileSync(base+'game3d.js','utf8');script="import {curveDrift as qaDrift,steeringRate as qaRate} from './physics.js';\nimport {shortcutOffset as qaOffset} from './shortcuts.js';\n"+script;
+script+=`
+const qaPanel=document.createElement('div');qaPanel.style='position:fixed;right:12px;top:160px;z-index:1000;display:flex;flex-direction:column;gap:4px';
+function qaButton(name,fn){const b=document.createElement('button');b.textContent=name;b.onclick=fn;qaPanel.append(b);}
+qaButton('QA ghost view',()=>{if(race.gameMode!=='trial')return;race.mode='playing';for(let i=0;i<150;i++)step(race,{gas:false,steer:0},1/60);race.mode='paused';});
+qaButton('QA finish trial',()=>{if(race.gameMode!=='trial'||!runSetup)return;race.mode='playing';for(let i=0;i<16000&&race.mode==='playing';i++){const speed=Math.max(2,race.speed),steer=-qaDrift(race.distance,speed,race.trackProfile)/qaRate(speed)-race.x*.8;step(race,{gas:true,steer},1/60);if(race.mode==='playing')trialRecorder.add(race);}if(race.mode==='over')finish();});
+function qaCut(middle){if(race.gameMode!=='race'||!runSetup)return;const path=shortcutsFor(race.trackProfile)[0];race.distance=middle?(path.entry+path.exit)/2:path.entry-45;race.x=middle?qaOffset(path,race.distance):0;race.shortcutActive=middle?path:null;race.speed=0;race.mode='playing';race.traffic.forEach((t,i)=>{t.distance=race.distance+20+i*25;t.z=t.distance-race.distance;});}
+qaButton('QA shortcut entry',()=>qaCut(false));qaButton('QA shortcut middle',()=>qaCut(true));qaButton('QA near miss',()=>{if(race.gameMode!=='career')return;race.mode='playing';race.speed=180;race.x=0;race.traffic=[{distance:race.distance+9,z:9,x:1.8,speed:70,kind:1}];});qaButton('Hide checks',()=>qaPanel.style.display='none');document.body.append(qaPanel);
+`;fs.writeFileSync(base+'__qa-game3d.js',script);let html=fs.readFileSync(base+'index.html','utf8').replace('src="game3d.js"','src="__qa-game3d.js"');fs.writeFileSync(base+'__qa-features.html',html);

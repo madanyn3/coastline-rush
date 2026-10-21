@@ -1,0 +1,128 @@
+{
+  "rock_face_01": {
+    "triangles": 20174,
+    "bounds": {
+      "min": [
+        -2.133601427078247,
+        -0.03435921296477318,
+        -3.466048240661621
+      ],
+      "max": [
+        2.8199098110198975,
+        3.5296897888183594,
+        0.36125504970550537
+      ]
+    },
+    "materials": [
+      {
+        "name": "rock_face_01",
+        "base": true,
+        "normal": true,
+        "metalrough": true
+      }
+    ]
+  },
+  "boulder_01": {
+    "triangles": 54146,
+    "bounds": {
+      "min": [
+        -0.7480385899543762,
+        -0.07364296913146973,
+        -0.9457283616065979
+      ],
+      "max": [
+        0.5239759087562561,
+        0.9301872253417969,
+        0.8818937540054321
+      ]
+    },
+    "materials": [
+      {
+        "name": "boulder_01",
+        "base": true,
+        "normal": true,
+        "metalrough": true
+      }
+    ]
+  },
+  "modular_urban_apartments_facade": {
+    "triangles": 4352,
+    "bytes": 16464296,
+    "bounds": {
+      "min": [
+        7.999999523162842,
+        3.9999996572732925,
+        -0.24000000953674316
+      ],
+      "max": [
+        11,
+        7.000000476837158,
+        0.1500074714422226
+      ]
+    },
+    "subset": true,
+    "sourceModules": 147,
+    "materials": [
+      {
+        "name": "modular_urban_apartments_facade_objects",
+        "base": true,
+        "normal": true,
+        "metalrough": true
+      },
+      {
+        "name": "modular_urban_apartments_facade_glass",
+        "base": true,
+        "normal": true,
+        "metalrough": true
+      },
+      {
+        "name": "modular_urban_apartments_facade_plaster",
+        "base": true,
+        "normal": true,
+        "metalrough": true
+      }
+    ],
+    "modules": [
+      {
+        "name": "wall_window_centered_large_01",
+        "translation": [
+          11,
+          4,
+          0
+        ],
+        "bounds": {
+          "min": [
+            7.999999523162842,
+            4,
+            0
+          ],
+          "max": [
+            11,
+            7.000000476837158,
+            0
+          ]
+        }
+      },
+      {
+        "name": "window_centered_large_01",
+        "translation": [
+          11,
+          4,
+          0
+        ],
+        "bounds": {
+          "min": [
+            8.439990520477295,
+            3.9999996572732925,
+            -0.24000000953674316
+          ],
+          "max": [
+            10.560009479522705,
+            6.299999475479126,
+            0.1500074714422226
+          ]
+        }
+      }
+    ]
+  }
+}

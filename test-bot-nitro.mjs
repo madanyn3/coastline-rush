@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {createRace,resetRace,step,botNitro,chargeNitro,NITRO_MAX,COMBO_MAX} from './coast-rush/dist/physics.js';
+const fresh=()=>{const s=createRace();resetRace(s);s.boostStrips=[];s.ramps=[];s.obstacles=[];return s;};
+let s=fresh(),t=s.traffic[0];t.speed=200;t.distance=650;t.nitro=0;s.distance=670;s.time=20;
+for(let i=0;i<250;i++)chargeNitro(t,.05);assert.equal(t.nitro,100);assert(botNitro(t,s));assert.equal(t.nitroTime,3);assert.equal(t.nitroUses,1);assert(!botNitro(t,s));for(let i=0;i<60;i++)chargeNitro(t,.05);assert(t.nitroTime<1e-8&&t.nitro<1e-6);
+t.nitro=100;t.nitroTime=0;const blocker={distance:t.distance+6,x:t.x};assert(!botNitro(t,s,blocker),'Do not boost into a blocked lane');t.impactTime=.5;assert(!botNitro(t,s));t.impactTime=0;t.jumpY=2;assert(!botNitro(t,s));
+s=fresh();s.x=4.8;s.distance=670;t={...s.traffic[0],x:0,targetX:0,distance:650,speed:200,nitro:100};s.traffic=[t];let peak=0;for(let i=0;i<185;i++){s.x=4.8;step(s,{gas:true},1/60);peak=Math.max(peak,t.speed);}assert(peak>250&&peak<=NITRO_MAX);assert(t.nitroUses>0);
+s=fresh();s.x=4.8;s.distance=670;t={...s.traffic[0],x:0,targetX:0,distance:650,speed:270,nitro:100,boostTime:2};s.traffic=[t];for(let i=0;i<60;i++){s.x=4.8;step(s,{gas:true},1/60);}assert(t.speed>NITRO_MAX&&t.speed<=COMBO_MAX);
+s=fresh();s.speed=180;s.traffic=[{...s.traffic[0],distance:1,x:0,targetX:0,speed:250,nitro:80,nitroTime:2}];step(s,{gas:true},.016);assert.equal(s.traffic[0].nitroTime,0);assert.equal(s.traffic[0].nitro,0,'Collisions cancel bot nitro too');
+s=fresh();s.mode='paused';t=s.traffic[0];t.nitroTime=2;const snapshot=JSON.stringify(s);step(s,{},.05);assert.equal(JSON.stringify(s),snapshot);
+console.log('PASS: earned bot nitro, three-second duration, safe tactical activation, no midair/damage activation, nitro/combined caps, collision cancellation, paused timers');

@@ -1,0 +1,14 @@
+import fs from 'node:fs';const root='coast-rush/dist/';
+let s=fs.readFileSync(root+'route-environments.js','utf8');
+s=s.replace('async function textures(id,renderer){','const textureCache=new Map();\nexport function routeTextures(id,renderer){if(!textureCache.has(id))textureCache.set(id,fetchTextures(id,renderer).catch(e=>{textureCache.delete(id);throw e;}));return textureCache.get(id);}\nconst textures=routeTextures;\nasync function fetchTextures(id,renderer){');fs.writeFileSync(root+'route-environments.js',s);
+s=fs.readFileSync(root+'shortcut-view.js','utf8');s="import {routeTextures} from './route-environments.js';\n"+s;
+s=s.replace('createShortcutView(scene,asphalt)', 'createShortcutView(scene,asphalt,renderer)');
+const start=s.indexOf(' const textureLoader='),end=s.indexOf('\n const propMesh',start);
+if(start<0||end<0)throw Error('Texture setup not found');
+s=s.slice(0,start)+` const groundTextures=[];let disposed=false;
+ routeTextures('rock_face_03',renderer).then(maps=>{if(disposed)return;groundTextures.push(maps.map,maps.normalMap,maps.roughnessMap);propMaterials[2].map=maps.map;propMaterials[2].normalMap=maps.normalMap;propMaterials[2].normalScale.set(.4,.4);propMaterials[2].needsUpdate=true;challengeKey='';}).catch(e=>console.warn('Shortcut texture fallback',e));`+s.slice(end);
+s=s.replace('const urban=path.profile.startsWith(\'city-\');',"const urban=path.profile.startsWith('city-')||!groundTextures.length;");
+s=s.replace('dispose(){clearProps();','dispose(){disposed=true;clearProps();').replace('groundTextures.forEach(t=>t.dispose());','');
+fs.writeFileSync(root+'shortcut-view.js',s);
+s=fs.readFileSync(root+'scene.js','utf8').replace('createShortcutView(scene,asphaltMaterial)', 'createShortcutView(scene,asphaltMaterial,renderer)');fs.writeFileSync(root+'scene.js',s);
+const credits=root+'assets/routes/CREDITS.md';s=fs.readFileSync(credits,'utf8').replace('`r`nRock Face 03','\nRock Face 03');fs.writeFileSync(credits,s);

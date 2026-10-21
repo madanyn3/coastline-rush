@@ -1,0 +1,16 @@
+import fs from 'node:fs';
+const dir='coast-rush/dist/';
+let h=fs.readFileSync(dir+'index.html','utf8');h=h.replace('</head>','<link rel="stylesheet" href="collection-design.css"></head>');
+const start=h.indexOf('<section id="collection"'),end=h.indexOf('<section id="race-results"',start);if(start<0||end<0)throw Error('Collection shell missing');
+h=h.slice(0,start)+`<section id="collection" hidden role="dialog" aria-modal="true" aria-labelledby="collection-title"><div class="collection-top"><button id="collection-close" aria-label="Close collection"><span aria-hidden="true">←</span> THE GRID</button><span class="collection-wordmark">COASTLINE <b>RUSH</b><span id="collection-title">Garage</span></span><span class="collection-wallet"><img src="assets/coin.svg" alt="Coin balance"><b id="collection-balance">0</b></span></div><div class="collection-intro"><div><span id="collection-kicker">01 / THE PADDOCK</span><h2 id="collection-subtitle">YOUR GARAGE</h2><p id="collection-description">Pick your machine. Make it yours.</p></div><p class="save-note" id="save-note"></p></div><nav class="collection-nav" aria-label="Game collections">${['garage','worlds','routes','missions','history'].map((id,i)=>`<button data-collection-tab="${id}" aria-current="false"><small>0${i+1}</small>${id[0].toUpperCase()+id.slice(1)}</button>`).join('')}</nav><div id="collection-body"></div></section>`+h.slice(end);fs.writeFileSync(dir+'index.html',h);
+let js=fs.readFileSync(dir+'game3d.js','utf8');
+js="import {collectionHeading,garageHero,collectionBadge,worldArt,historyEmpty} from './collection-design.js';\n"+js;
+js=js.replace("const body=$('collection-body');body.replaceChildren();","const body=$('collection-body');body.replaceChildren();collectionHeading(tab,profile,saveOK);body.scrollTop=0;");
+js=js.replace("body.textContent='Your next run starts your history.';return;","historyEmpty(body);return;");
+js=js.replace("const grid=document.createElement('div');grid.className='collection-grid';const isCar=tab==='garage'", "const grid=document.createElement('div');grid.className='collection-grid';const isCar=tab==='garage'");
+js=js.replace("for(const item of items){const card=", "if(isCar)closeCustomizer=garageHero(body,profile);else grid.classList.add('world-grid');for(const [index,item] of items.entries()){const card=");
+js=js.replace("card.className='collection-card';const selected=", "card.className='collection-card';card.dataset.item=item.id;card.dataset.kind=isCar?'car':'world';const selected=");
+js=js.replace("const title=document.createElement('h3');title.textContent=item.name;", "if(!isCar)card.replaceChildren(worldArt(item.id));collectionBadge(card,{selected,owned:has,index});const title=document.createElement('h3');title.textContent=item.name;");
+js=js.replace("for(const id of ['garage','worlds','history','missions','routes'])$(id).onclick=()=>collection(id);", "for(const id of ['garage','worlds','history','missions','routes'])$(id).onclick=()=>collection(id);\nfor(const button of document.querySelectorAll('[data-collection-tab]'))button.onclick=()=>collection(button.dataset.collectionTab);");
+fs.writeFileSync(dir+'game3d.js',js);
+console.log('Updated collection shell, navigation, garage preview and card visuals');

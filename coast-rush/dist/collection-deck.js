@@ -1,0 +1,15 @@
+import {carCredits} from './car-credits.js';
+export function collectionDeck(body,grid,{selected,credits=false}={}){
+ const cards=[...grid.children],deck=document.createElement('section'),window=document.createElement('div'),footer=document.createElement('div');
+ deck.className='selection-deck';deck.setAttribute('aria-label','Browse '+document.getElementById('collection-title').textContent);window.className='deck-window';grid.classList.add('deck-track');window.append(grid);deck.append(window,footer);footer.className='deck-controls';
+ const previous=document.createElement('button'),next=document.createElement('button'),status=document.createElement('span');previous.textContent='←';next.textContent='→';previous.setAttribute('aria-label','Previous item');next.setAttribute('aria-label','Next item');status.className='deck-position';status.setAttribute('aria-live','polite');status.setAttribute('aria-atomic','true');footer.append(previous,status,next);body.append(deck);
+ let index=Math.max(0,cards.findIndex(c=>c.dataset.item===selected)),pointer=null;
+ function show(value){const focused=document.activeElement;index=Math.max(0,Math.min(cards.length-1,value));cards.forEach((c,i)=>{c.inert=i!==index;c.setAttribute('aria-hidden',String(i!==index));});grid.style.transform='translateX(-'+index*100+'%)';status.textContent=String(index+1).padStart(2,'0')+' / '+String(cards.length).padStart(2,'0');previous.disabled=index===0;next.disabled=index===cards.length-1;if(focused&&cards.some((c,i)=>i!==index&&c.contains(focused)))cards[index].querySelector('button:not(:disabled)')?.focus({preventScroll:true});if(focused===next&&next.disabled)previous.focus({preventScroll:true});if(focused===previous&&previous.disabled)next.focus({preventScroll:true});}
+ previous.onclick=()=>show(index-1);next.onclick=()=>show(index+1);
+ deck.addEventListener('keydown',e=>{if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();e.stopPropagation();show(index+(e.key==='ArrowRight'?1:-1));}});
+ window.addEventListener('pointerdown',e=>{if(e.target.closest('button,a'))return;pointer={x:e.clientX,y:e.clientY,id:e.pointerId};});
+ window.addEventListener('pointerup',e=>{if(!pointer||pointer.id!==e.pointerId)return;const dx=e.clientX-pointer.x,dy=e.clientY-pointer.y;pointer=null;if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)*1.5)show(index+(dx<0?1:-1));});window.addEventListener('pointercancel',()=>pointer=null);
+ let dialog;
+ if(credits){const b=document.createElement('button');b.className='deck-credits';b.textContent='ⓘ';b.setAttribute('aria-label','Car model credits');footer.append(b);dialog=document.createElement('dialog');dialog.className='model-credits-dialog';dialog.setAttribute('aria-label','Car model credits');const close=document.createElement('button');close.textContent='Close ×';close.onclick=()=>dialog.close();dialog.append(close);carCredits(dialog);const details=dialog.querySelector('details');details.open=true;details.querySelector('summary').hidden=true;document.getElementById('collection').append(dialog);b.onclick=()=>dialog.showModal();}
+ show(index);return ()=>{dialog?.close();dialog?.remove();};
+}

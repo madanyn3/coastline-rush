@@ -1,0 +1,24 @@
+import fs from 'node:fs';
+const dir='coast-rush/dist/';function replace(s,a,b){if(!s.includes(a))throw Error('Missing '+a.slice(0,90));return s.replace(a,b);}function edit(f,fn){fs.writeFileSync(dir+f,fn(fs.readFileSync(dir+f,'utf8')));}
+edit('progression.js',s=>{s="import {validRoute} from './routes.js';\n"+s;s=replace(s,'version:1,wallet,','version:1,route:validRoute(p?.route),wallet,');return replace(s,'mode,car:p.car,world:p.world,','mode,car:p.car,world:p.world,route:validRoute(p.route),');});
+edit('physics.js',s=>{s="import {validRoute} from './routes.js';\n"+s;s=replace(s,"raceDifficulty='medium'){","raceDifficulty='medium',route='coast'){");s=replace(s,'s.trackProfile=trackFor(s.gameMode,s.raceDifficulty);','s.routeId=validRoute(route);s.trackProfile=trackFor(s.gameMode,s.raceDifficulty,s.routeId);');
+ const a='const cornerSpeed=boosted||nitrous||draftBoost?cap:t.targetSpeed-Math.min(4,Math.abs(curvature(t.distance+20,s.trackProfile||s.gameMode))*1800);';
+ s=replace(s,a,"const mountainLimit=s.routeId==='mountain'?Math.max(105,t.normalMax-Math.min(95,Math.max(...[10,35,65].map(a=>Math.abs(curvature(t.distance+a,s.trackProfile))))*17000)):Infinity;\n   const cornerSpeed=Math.min(mountainLimit,boosted||nitrous||draftBoost?cap:t.targetSpeed-Math.min(4,Math.abs(curvature(t.distance+20,s.trackProfile||s.gameMode))*1800));");
+ s=replace(s,"smoothBoostSpeed(t,cap,boosted&&nitrous?", "smoothBoostSpeed(t,Math.min(cap,mountainLimit),boosted&&nitrous?");return s;});
+edit('game3d.js',s=>{s="import {renderRoutes,validRoute,routeName,routeSection} from './routes.js';\n"+s;
+ s=replace(s," if(tab==='customize')"," if(tab==='routes'){$('collection-title').textContent='Routes';renderRoutes(body,profile,{select:id=>{const previous=profile.route;profile.route=validRoute(id);if(!commit()){profile.route=previous;notice('Saving unavailable. Route unchanged.');}modeCopy();collection('routes');}});return;}\n if(tab==='customize')");
+ s=replace(s,"for(const id of ['garage','worlds','history','missions'])","for(const id of ['garage','worlds','history','missions','routes'])");
+ s=replace(s,"?'garage':collectionTab==='worlds'", "?'garage':collectionTab==='routes'?'routes':collectionTab==='worlds'");
+ s=replace(s,"carName(h.car)+' / '+worldName(h.world)","carName(h.car)+' / '+routeName(h.route)+' / '+worldName(h.world)");
+ s=replace(s,"function modeCopy(){document.body", "function modeCopy(){$('route-name').textContent=routeName(profile.route);$('routes').setAttribute('aria-label','Choose route: '+routeName(profile.route));document.body");
+ s=replace(s,"race.worldId=profile.world;race.raceDifficulty", "race.worldId=profile.world;race.routeId=validRoute(profile.route);race.raceDifficulty");
+ s=replace(s,'trackFor(selectedMode,raceLevel);','trackFor(selectedMode,raceLevel,profile.route);');
+ s=replace(s,'Math.random,spec,raceLevel);','Math.random,spec,raceLevel,profile.route);');
+ s=replace(s,'world:profile.active?.world||profile.world,raceReward','world:profile.active?.world||profile.world,route:race.routeId,raceReward');
+ s=replace(s,'summary,{carName,worldName}','summary,{carName,worldName,routeName}');
+ s=replace(s,"'RACE · '+(race.raceDifficulty||'medium').toUpperCase()", "routeName(race.routeId).toUpperCase()+' · '+(race.raceDifficulty||'medium').toUpperCase()");
+ return s;
+});
+edit('race-results.js',s=>{s=replace(s,'{car,world,raceReward','{car,world,route=\'coast\',raceReward');s=replace(s,'version:1,car,world,difficulty','version:1,car,world,route,difficulty');s=replace(s,'{carName,worldName})','{carName,worldName,routeName=()=>\'Coastline\'})');return replace(s,"carName(result.car)+' · '+worldName(result.world)","carName(result.car)+' · '+routeName(result.route)+' · '+worldName(result.world)");});
+edit('index.html',s=>{s=replace(s,'href="customization-results.css">','href="customization-results.css"><link rel="stylesheet" href="routes.css">');return replace(s,'<div id="race-level-row"', '<div class="setup-row route-selector"><span class="setup-label">ROUTE</span><button id="routes" aria-label="Choose route: Coastline"><span id="route-name">Coastline</span><small aria-hidden="true">↗</small></button></div>\n<div id="race-level-row"');});
+const path='android/AndroidManifest.xml';fs.writeFileSync(path,fs.readFileSync(path,'utf8').replace('versionCode="22"','versionCode="23"').replace('versionName="1.21"','versionName="1.22"'));

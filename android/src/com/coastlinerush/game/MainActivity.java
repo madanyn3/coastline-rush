@@ -1,0 +1,19 @@
+package com.coastlinerush.game;
+import android.app.Activity;
+import android.os.Bundle;
+import android.hardware.*;
+import android.webkit.*;
+import android.view.WindowManager;
+import java.io.*;
+public class MainActivity extends Activity implements SensorEventListener {
+ private WebView web; private SensorManager sensors; private Sensor accelerometer; private boolean enabled=false; private int lastRotation=-1; private long last=0;
+ @Override public void onCreate(Bundle state){super.onCreate(state);getWindow().setFlags(1024,1024);getWindow().getDecorView().setSystemUiVisibility(5894);getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);sensors=(SensorManager)getSystemService(SENSOR_SERVICE);accelerometer=sensors.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);web=new WebView(this);web.getSettings().setJavaScriptEnabled(true);web.getSettings().setDomStorageEnabled(true);web.getSettings().setAllowFileAccess(false);web.getSettings().setAllowContentAccess(false);web.addJavascriptInterface(new Motion(),"AndroidMotion");web.setWebViewClient(new WebViewClient(){@Override public WebResourceResponse shouldInterceptRequest(WebView v,WebResourceRequest r){String path=r.getUrl().getPath();if(!"appassets.androidplatform.net".equals(r.getUrl().getHost()))return new WebResourceResponse("text/plain","UTF-8",new ByteArrayInputStream(new byte[0]));if(path==null||!path.startsWith("/"))return new WebResourceResponse("text/plain","UTF-8",new ByteArrayInputStream(new byte[0]));String name=path.substring(1);String mime=AssetPolicy.mimeType(name);if(mime==null)return new WebResourceResponse("text/plain","UTF-8",new ByteArrayInputStream(new byte[0]));try{return new WebResourceResponse(mime,AssetPolicy.encoding(name),getAssets().open(name));}catch(IOException e){return null;}}@Override public boolean shouldOverrideUrlLoading(WebView v,WebResourceRequest r){return true;}});setContentView(web);try{ByteArrayOutputStream bytes=new ByteArrayOutputStream();InputStream in=getAssets().open("index.html");byte[] buf=new byte[4096];int n;while((n=in.read(buf))>0)bytes.write(buf,0,n);in.close();web.loadDataWithBaseURL("https://appassets.androidplatform.net/",bytes.toString("UTF-8"),"text/html","UTF-8",null);}catch(IOException e){throw new RuntimeException(e);}}
+ public class Motion {@JavascriptInterface public void setFullscreen(final boolean value){runOnUiThread(new Runnable(){public void run(){getWindow().getDecorView().setSystemUiVisibility(value?5894:0);}});}@JavascriptInterface public void setEnabled(boolean value){runOnUiThread(new Runnable(){public void run(){enabled=value;lastRotation=-1;last=0;if(value&&accelerometer==null)web.evaluateJavascript("window.nativeTiltUnavailable&&window.nativeTiltUnavailable()",null);}});}}
+ @Override public void onSensorChanged(SensorEvent e){if(!enabled||web==null)return;int rotation=getWindowManager().getDefaultDisplay().getRotation();float x=(rotation==1?-e.values[1]:rotation==3?e.values[1]:rotation==2?-e.values[0]:e.values[0]);if(rotation!=lastRotation){lastRotation=rotation;web.evaluateJavascript("window.nativeTiltReset&&window.nativeTiltReset()",null);}long now=android.os.SystemClock.elapsedRealtime();if(now-last<30)return;last=now;float amount=-x/3.8f;web.evaluateJavascript("window.nativeTilt&&window.nativeTilt("+amount+")",null);}
+ @Override public void onAccuracyChanged(Sensor s,int a){}
+ @Override protected void onResume(){super.onResume();lastRotation=-1;last=0;if(web!=null)web.onResume();if(accelerometer!=null)sensors.registerListener(this,accelerometer,SensorManager.SENSOR_DELAY_GAME);}
+ @Override protected void onPause(){if(web!=null){web.evaluateJavascript("window.nativePause&&window.nativePause()",null);web.onPause();}sensors.unregisterListener(this);super.onPause();}
+ @Override protected void onDestroy(){if(web!=null){web.removeJavascriptInterface("AndroidMotion");web.destroy();}super.onDestroy();}
+}
+
+

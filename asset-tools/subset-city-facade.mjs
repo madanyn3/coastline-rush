@@ -1,0 +1,24 @@
+import {NodeIO} from '@gltf-transform/core';
+import {prune,getBounds} from '@gltf-transform/functions';
+import fs from 'node:fs/promises';
+const base='coast-rush/dist/assets/routes';
+const file=`${base}/modular_urban_apartments_facade.glb`;
+const source='downloads/modular_urban_apartments_facade-full.glb';
+try{await fs.access(source);}catch{await fs.copyFile(file,source);}
+const io=new NodeIO(),doc=await io.read(source);
+const keep=new Set(['wall_window_centered_large_01','window_centered_large_01']);
+for(const n of doc.getRoot().listNodes())if(!keep.has(n.getName()))n.dispose();
+await doc.transform(prune({keepLeaves:true}));
+const root=doc.getRoot();
+if(root.listNodes().length!==2)throw Error('Unexpected subset nodes');
+let tris=0;for(const m of root.listMeshes())for(const p of m.listPrimitives())tris+=(p.getIndices()?.getCount()||p.getAttribute('POSITION').getCount())/3;
+await io.write(file,doc);
+const bytes=(await fs.stat(file)).size;
+if(bytes>=24*1024*1024)throw Error(`Subset still too large: ${bytes}`);
+const report=JSON.parse(await fs.readFile(`${base}/asset-report.json`));
+report.modular_urban_apartments_facade={triangles:tris,bytes,bounds:getBounds(root.listScenes()[0]),subset:true,sourceModules:147,materials:root.listMaterials().map(m=>({name:m.getName(),base:!!m.getBaseColorTexture(),normal:!!m.getNormalTexture(),metalrough:!!m.getMetallicRoughnessTexture()})),modules:root.listNodes().map(n=>({name:n.getName(),translation:n.getTranslation(),bounds:getBounds(n)}))};
+await fs.writeFile(`${base}/asset-report.json`,JSON.stringify(report,null,2));
+let credits=await fs.readFile(`${base}/CREDITS.md`,'utf8');
+credits=credits.replace('147 separate modules; original detailed geometry and 2K PBR materials','two selected modules (`wall_window_centered_large_01` and `window_centered_large_01`) from the 147-module source kit; original detailed geometry, node transforms, and unchanged 2K PBR materials');
+await fs.writeFile(`${base}/CREDITS.md`,credits);
+console.log(JSON.stringify(report.modular_urban_apartments_facade,null,2));

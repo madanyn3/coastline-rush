@@ -1,0 +1,5 @@
+import fs from 'node:fs';const base='coast-rush/dist/';let js=fs.readFileSync(base+'game3d.js','utf8');
+js="import {curveDrift as qaDrift,steeringRate as qaRate} from './physics.js';\n"+js;
+js+=`\nconst qaChecks=document.createElement('div');qaChecks.style='position:fixed;right:10px;top:80px;z-index:1000;display:flex;gap:8px';
+const qaFinish=document.createElement('button');qaFinish.textContent='QA finish cup round';qaFinish.onclick=()=>{if(!runSetup?.cupId||race.mode==='over')return;race.mode='playing';for(let i=0;i<20000&&race.mode==='playing';i++){if(race.nitro>=100)activateNitro(race);const speed=Math.max(1,race.speed),steer=-qaDrift(race.distance,speed,race.trackProfile)/qaRate(speed)-race.x*.8;step(race,{gas:true,steer},1/60);}if(race.mode==='over')finish();};const qaHide=document.createElement('button');qaHide.textContent='Hide checks';qaHide.onclick=()=>qaChecks.hidden=true;qaChecks.append(qaFinish,qaHide);document.body.append(qaChecks);`;
+fs.writeFileSync(base+'__qa-cup.js',js);fs.writeFileSync(base+'__qa-cup.html',fs.readFileSync(base+'index.html','utf8').replace('src="game3d.js"','src="__qa-cup.js"'));

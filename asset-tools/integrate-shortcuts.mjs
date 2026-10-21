@@ -1,0 +1,18 @@
+import fs from 'node:fs';const base='coast-rush/dist/';
+let s=fs.readFileSync(base+'route-environments.js','utf8');s="import {shortcutClearance} from './shortcuts.js';\n"+s;
+s=s.replace('function cityScene(root,{concrete,kit}){','function cityScene(root,{concrete,kit}){let cuts=false;').replace('function mountainScene(root,{rock,cliff,boulder,details}){','function mountainScene(root,{rock,cliff,boulder,details}){let cuts=false;');
+s=s.replaceAll('return {lamps,update(s){const d=s.distance,track=s.trackProfile;',"return {lamps,update(s){cuts=s.gameMode==='race';const d=s.distance,track=s.trackProfile;");
+s=s.replace('o.scale.setScalar(f<360?1:0);','o.scale.setScalar(f<360&&!(cuts&&shortcutClearance(track,item.x,d+f,10))?1:0);');
+s=s.replace('o.scale.setScalar(f<355?(item.scale||1):0);',"o.scale.setScalar(f<355&&!(cuts&&shortcutClearance(track,item.x,d+f,kind==='cliff'?11:6))?(item.scale||1):0);");
+s=s.replace('-height(d,track)+.12,-f);','-height(d,track)+(cuts&&shortcutClearance(track,x,d+f,10)?-.2:.12),-f);');
+s=s.replace('rise(f,d,track)+offset+noise-.12,-f);','rise(f,d,track)+(cuts&&shortcutClearance(track,x,d+f,7)?-.24:offset+noise-.12),-f);');
+s=s.replaceAll('g.visible=f<350;',"g.visible=f<350&&!(cuts&&shortcutClearance(track,g.userData.x,d+f,5));");
+fs.writeFileSync(base+'route-environments.js',s);
+s=fs.readFileSync(base+'scene.js','utf8');s=s.replace('g.position.z=18-Math.floor(i/2)*6;scene.add(g);rails.push(g);','g.position.z=18-Math.floor(i/2)*6;for(const m of g.children)m.geometry.setAttribute(\'gateAnchor\',new THREE.Float32BufferAttribute(new Float32Array(m.geometry.attributes.position.count).fill(g.position.z),1));scene.add(g);rails.push(g);');
+s=s.replace('shortcutGate(trackMode,distance+f,Math.sign(b[i*3]))',"shortcutGate(trackMode,m.geometry.attributes.gateAnchor?distance-z-m.geometry.attributes.gateAnchor.getX(i):distance+f,Math.sign(b[i*3]))");fs.writeFileSync(base+'scene.js',s);
+s=fs.readFileSync(base+'race-map.js','utf8');s="import {shortcutsFor,shortcutOffset} from './shortcuts.js';\n"+s;
+s=s.replace('const left=Math.min(...samples.map(p=>p.worldX))-ROAD_LIMIT-3,right=Math.max(...samples.map(p=>p.worldX))+ROAD_LIMIT+3,',"const cuts=s.gameMode==='race'?shortcutsFor(profile).filter(p=>p.end>start&&p.start<end).map(p=>Array.from({length:41},(_,i)=>{const distance=Math.max(start,p.start)+(Math.min(end,p.end)-Math.max(start,p.start))*i/40;return {distance,worldX:center(distance,profile)+shortcutOffset(p,distance)};})):[],all=[...samples,...cuts.flat()];const left=Math.min(...all.map(p=>p.worldX))-ROAD_LIMIT-3,right=Math.max(...all.map(p=>p.worldX))+ROAD_LIMIT+3,");
+s=s.replace('markers:cars.map(c=>({...c,...point(c.distance,c.lane)})),',"shortcuts:cuts.map(points=>points.map(p=>({x:80+(p.worldX-mid)/span*140,y:78-(p.distance-start)/(end-start)*70}))),markers:cars.map(c=>({...c,...(c.id==='player'&&s.shortcutActive?{x:80+(center(c.distance,profile)+c.lane-mid)/span*140,y:78-(c.distance-start)/(end-start)*70}:point(c.distance,c.lane))})),");
+s=s.replace("const title=make('title',{});","const shortcut=make('path',{class:'map-shortcut'});const title=make('title',{});");
+s=s.replace("road.setAttribute('d',path);range.textContent", "road.setAttribute('d',path);shortcut.setAttribute('d',map.shortcuts.map(points=>points.map((p,i)=>(i?'L':'M')+p.x.toFixed(2)+' '+p.y.toFixed(2)).join('')).join(''));range.textContent");
+fs.writeFileSync(base+'race-map.js',s);
