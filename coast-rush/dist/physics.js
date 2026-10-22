@@ -1,3 +1,6 @@
+import {planBot} from './bot-driver.js';
+import {updateDrift} from './drifting.js';
+import {laneLimit} from './route-sections.js';
 import {updateShortcutTerrain} from './shortcut-terrain.js';
 import {updateNearMisses} from './near-misses.js';
 import {trialSeed} from './time-trials.js';
@@ -30,7 +33,7 @@ export function smoothSteering(current,target,dt){
 }
 export const DENSITY={light:{spacing:90,initial:3},normal:{spacing:55,initial:5},heavy:{spacing:30,initial:8}};
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),lanes=[-3.7,0,3.7];
-export function createRace(){return {raceLength:RACE_LENGTH,cupId:null,cupRound:null,cupRivalId:null,mode:'ready',gameMode:'race',difficulty:'normal',slipstream:0,drafting:false,draftSeconds:0,railHits:0,nitroUses:0,speed:0,distance:0,x:0,steering:0,traffic:[],coins:[],collected:0,ramps:[],obstacles:[],jumpY:0,jumpVelocity:0,rampHits:0,obstacleHits:0,countdown:0,goTime:0,boostStrips:[],boostAcceleration:0,boostTime:0,stripHits:0,nitro:0,nitroTime:0,nitroIgnition:0,sinceSpawn:0,nextCoin:70,rail:false,time:0,place:1,impact:0,impactCount:0,lastImpactLoss:0,rewardPaid:false,finishTime:null,nearCombo:0,comboTime:0,nearMisses:0,nearReward:0,bestCombo:0,nearFlash:0,trialSplits:[],shortcutActive:null,shortcutUses:0,shortcutsCompleted:0,shortcutLift:0,shortcutPitch:0,shortcutRoll:0,shortcutAir:false,shortcutRampHits:[],shortcutPropHits:[]};}
+export function createRace(){return {curveForce:0,drifting:false,driftTime:0,driftAngle:0,driftCount:0,driftBank:0,driftBest:0,tutorial:false,cornerAssist:true,terrainNormalTick:0,won:false,raceLength:RACE_LENGTH,cupId:null,cupRound:null,cupRivalId:null,mode:'ready',gameMode:'race',difficulty:'normal',slipstream:0,drafting:false,draftSeconds:0,railHits:0,nitroUses:0,speed:0,distance:0,x:0,steering:0,traffic:[],coins:[],collected:0,ramps:[],obstacles:[],jumpY:0,jumpVelocity:0,rampHits:0,obstacleHits:0,countdown:0,goTime:0,boostStrips:[],boostAcceleration:0,boostTime:0,stripHits:0,nitro:0,nitroTime:0,nitroIgnition:0,sinceSpawn:0,nextCoin:70,rail:false,time:0,place:1,impact:0,impactCount:0,lastImpactLoss:0,rewardPaid:false,finishTime:null,nearCombo:0,comboTime:0,nearMisses:0,nearReward:0,bestCombo:0,nearFlash:0,trialSplits:[],shortcutActive:null,shortcutUses:0,shortcutsCompleted:0,shortcutLift:0,shortcutPitch:0,shortcutRoll:0,shortcutAir:false,shortcutRampHits:[],shortcutPropHits:[]};}
 function vehicle(distance,x,speed,kind){return {distance,z:distance,x,speed,kind,contact:false};}
 export function resetRace(s,gameMode='race',difficulty='normal',random=Math.random,spec={max:200,acceleration:52},raceDifficulty='medium',route='coast',length=RACE_LENGTH){
  Object.assign(s,createRace(),{mode:'playing',gameMode:gameMode==='trial'?'trial':gameMode==='career'?'career':'race',difficulty:DENSITY[difficulty]?difficulty:'normal'});
@@ -95,8 +98,8 @@ export function step(s,input,dt,random=Math.random){
  const offset=(s.normalMax||200)-200;
  const limit=offset+(stripActive&&nitroActive?COMBO_MAX:nitroActive?NITRO_MAX:stripActive?STRIP_MAX:NORMAL_MAX+(draftActive?DRAFT_BONUS*s.slipstream:0));
  smoothBoostSpeed(s,limit,stripActive&&nitroActive?'combo':nitroActive?'nitro':stripActive?'strip':draftActive?'draft':null,dt,input.gas?(s.acceleration||52):-7,input.brake);
- const branch=shortcutBounds(s),steering=smoothSteering(s.steering,input.steer,dt),lateralSpeed=steering.average*steeringRate(s.speed)*(s.handling||1)+(branch?0:curveDrift(s.distance,s.speed,s.trackProfile||s.gameMode)),desired=s.x+lateralSpeed*dt,wasRail=s.rail;
- s.steering=steering.value;s.rail=desired<(branch?.min??-ROAD_LIMIT)||desired>(branch?.max??ROAD_LIMIT);s.x=clamp(desired,branch?.min??-ROAD_LIMIT,branch?.max??ROAD_LIMIT);
+ const branch=shortcutBounds(s),edge=laneLimit(s.routeId,s.distance),steering=smoothSteering(s.steering,input.steer,dt),targetForce=branch?0:curveDrift(s.distance,s.speed,s.trackProfile||s.gameMode)*(s.cornerAssist===false?1:.5);s.curveForce=(s.curveForce||0)+(targetForce-(s.curveForce||0))*(1-Math.exp(-dt/.24));const lateralSpeed=steering.average*steeringRate(s.speed)*(s.handling||1)+(branch?0:s.curveForce),desired=s.x+lateralSpeed*dt,wasRail=s.rail;
+ s.steering=steering.value;s.rail=desired<(branch?.min??-edge)||desired>(branch?.max??edge);s.x=clamp(desired,branch?.min??-edge,branch?.max??edge);
  if(s.rail){clearSlipstream(s);if(!wasRail){s.speed*=.82;s.railHits=(s.railHits||0)+1;}s.speed=Math.max(0,s.speed-(35+s.speed*.35)*dt);}
  const meters=s.speed/3.6*dt*(branch?.factor||1);s.distance+=meters;s.sinceSpawn+=meters;if(branch)s.x+=shortcutOffset(s.shortcutActive,s.distance)-shortcutOffset(s.shortcutActive,oldDistance);
  if(s.gameMode!=='career'){stripPickup(s,s,'player',oldDistance);raceFeatures(s,s,'player',oldDistance);for(const strip of s.boostStrips)strip.z=strip.distance-s.distance;}
@@ -108,13 +111,13 @@ export function step(s,input,dt,random=Math.random){
    if(t.finishTime!==null)continue;
    t.boostTime=Math.max(0,(t.boostTime||0)-dt);t.impactTime=Math.max(0,(t.impactTime||0)-dt);chargeNitro(t,dt);
    const racers=[...s.traffic,s],ahead=racers.filter(o=>o!==t&&o.distance>t.distance&&o.distance-t.distance<22&&Math.abs(o.x-t.x)<1.6).sort((a,b)=>a.distance-b.distance)[0];
-   if(ahead&&!(t.drafting&&t.slipstream<.85&&ahead.distance-t.distance>12)){const options=lanes.filter(x=>!racers.some(o=>o!==t&&Math.abs(o.distance-t.distance)<9&&Math.abs(o.x-x)<1.5));if(options.length)t.targetX=options[(t.id+Math.floor(s.time/5))%options.length];}
+   planBot(t,s,dt);
    botNitro(t,s,ahead);const boosted=t.boostTime>0,nitrous=t.nitroTime>0,draftBoost=t.slipstream>0,cap=offset+(boosted&&nitrous?COMBO_MAX:nitrous?NITRO_MAX:boosted?STRIP_MAX:NORMAL_MAX+(draftBoost?DRAFT_BONUS*t.slipstream:0));
    const mountainLimit=s.routeId==='mountain'?Math.max(105,t.normalMax-Math.min(95,Math.max(...[10,35,65].map(a=>Math.abs(curvature(t.distance+a,s.trackProfile))))*17000)):Infinity;
-   const cornerSpeed=Math.min(mountainLimit,boosted||nitrous||draftBoost?cap:t.targetSpeed-Math.min(4,Math.abs(curvature(t.distance+20,s.trackProfile||s.gameMode))*1800));
+   const cornerSpeed=Math.min(mountainLimit,boosted||nitrous||draftBoost?cap:Math.min(t.cornerTarget??t.targetSpeed,t.targetSpeed-Math.min(4,Math.abs(curvature(t.distance+20,s.trackProfile||s.gameMode))*1800)));
    const desiredSpeed=ahead&&Math.abs(t.x-t.targetX)<.4?Math.min(cornerSpeed,ahead.speed+4):cornerSpeed;
    const normalAcceleration=clamp((desiredSpeed-t.speed)/(dt||1),-70*(t.braking||110)/110,t.acceleration*(t.impactTime>0?.15:1));smoothBoostSpeed(t,Math.min(cap,mountainLimit),boosted&&nitrous?'combo':nitrous?'nitro':boosted?'strip':draftBoost?'draft':null,dt,normalAcceleration);if(ahead&&t.speed>desiredSpeed&&Math.abs(t.x-t.targetX)<.4)t.speed=Math.max(desiredSpeed,t.speed-70*(t.braking||110)/110*dt);
-   t.x+=clamp(t.targetX-t.x,-2*(t.handling||1)*dt,2*(t.handling||1)*dt);
+   const safeEdge=laneLimit(s.routeId,t.distance)-.25;t.targetX=clamp(t.targetX,-safeEdge,safeEdge);t.x+=clamp(t.targetX-t.x,-2.6*(t.handling||1)*dt,2.6*(t.handling||1)*dt);
   }
  }
  for(const t of s.traffic){
@@ -133,6 +136,7 @@ export function step(s,input,dt,random=Math.random){
    t.distance+=(t.z>=0?1:-1)*.5;t.z=t.distance-s.distance;
   }
  }
+ updateDrift(s,input,dt);
  if(s.gameMode==='career'){
   updateNearMisses(s,dt,oldDistance,oldX);s.traffic=s.traffic.filter(t=>t.z>-30&&t.z<450);
   // A traffic crash ends the run before any pickups in that frame.

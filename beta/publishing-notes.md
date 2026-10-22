@@ -11,7 +11,7 @@ Prepared 21 October 2026. Nothing in this folder has been uploaded or published 
 - Visibility: Public; eligible for search and browse, without promising indexing or traffic
 - Community: Comments enabled; ratings enabled
 - Suggested tags: racing, 3d, singleplayer, arcade, android
-- Download: CoastlineRush-1.34-beta.apk
+- Download: CoastlineRush-1.35-beta.apk
 - Page text: itch-page.md
 
 Use actual game captures for screenshots. Include the existing in-game asset credits in the APK; do not upload source code, signing keys or private repository archives.

@@ -1,4 +1,6 @@
-# Coastline Rush for Android — 1.34
+# Coastline Rush for Android — 1.35
+
+New in 1.35: Driver Hub graphics/steering settings, first-drive practice, predictive rival driving, route narrowing and Summit tunnel, drift nitro, permanent milestones and Ember paint, save export/import with Android document picker, and grid/podium presentation. See ../beta/RELEASE-1.35.md for the full changes and verification limits.
 
 New in 1.34: custom lime/cyan Coastline Rush launcher artwork, density-specific legacy icons, circular icons and adaptive Android launcher resources. This remains a direct-install beta using the existing signing key. Gameplay and save format are unchanged.
 

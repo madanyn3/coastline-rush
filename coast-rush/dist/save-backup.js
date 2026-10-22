@@ -1,0 +1,7 @@
+import {loadProfile} from './progression.js';
+const MAX=8*1024*1024;
+export function exportSave(profile,settings){return JSON.stringify({format:'coastline-rush-save',version:1,date:new Date().toISOString(),profile,settings},null,2);}
+export function parseSave(text){if(typeof text!=='string'||text.length>MAX)throw Error('Backup is too large');let data;try{data=JSON.parse(text);}catch{throw Error('Not a valid JSON backup');}if(data?.format!=='coastline-rush-save'||data.version!==1||!data.profile||typeof data.profile!=='object'||!Array.isArray(data.profile.ownedCars)||!Number.isFinite(data.profile.wallet)||data.profile.wallet<0||data.profile.wallet>1e9)throw Error('Unsupported or damaged backup');
+ const valid=(value,depth=0)=>{if(depth>24)return false;if(typeof value==='number')return Number.isFinite(value);if(value&&typeof value==='object')return Object.values(value).every(v=>valid(v,depth+1));return true;};if(!valid(data))throw Error('Backup contains invalid values');
+ if(!Array.isArray(data.profile.history)||data.profile.history.some(h=>!h||typeof h!=='object'||typeof h.id!=='string'||!Number.isFinite(h.distance)||!Number.isFinite(h.time)||!Number.isFinite(h.coins)))throw Error('Backup history is damaged');
+ const encoded=JSON.stringify(data.profile);const profile=loadProfile({getItem:key=>key==='coast-profile-v1'?encoded:null});profile.active=null;return {profile,settings:data.settings,date:data.date};}

@@ -33,3 +33,5 @@ coast-rush/.git/
 coast-rush/.openai/
 coast-rush/.gitignore
 beta/artwork/
+beta/qa-*
+coast-rush/dist/__qa*

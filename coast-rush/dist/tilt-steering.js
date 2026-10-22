@@ -19,8 +19,8 @@ export class TiltSteering {
    return this.output=0;
   }
   const target=this.unwrapped-this.baseline;
-  this.filtered+=(target-this.filtered)*(1-Math.exp(-dt/.075));
-  const magnitude=Math.abs(this.filtered),deadzone=.065;
+  this.filtered+=(target-this.filtered)*(1-Math.exp(-dt/(Math.abs(target)<Math.abs(this.filtered)?.095:.12)));
+  const magnitude=Math.abs(this.filtered),deadzone=.08;
   this.output=magnitude<=deadzone?0:clamp(Math.sign(this.filtered)*(magnitude-deadzone)/(1-deadzone)*1.15);
   return this.output;
  }

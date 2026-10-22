@@ -4,6 +4,11 @@ $bt=Join-Path $sdk 'build-tools/34.0.0'
 $jar=Join-Path $sdk 'platforms/android-34/android.jar'
 $jdk='C:/Program Files/Eclipse Adoptium/jdk-17.0.17.10-hotspot/bin'
 Set-Location $PSScriptRoot
+if(Get-ChildItem ../coast-rush/dist -Filter '__qa*' -File){throw 'Remove temporary QA pages before building a release.'}
+$releaseAssets=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot 'build/assets'))
+$releaseRoot=[IO.Path]::GetFullPath($PSScriptRoot)+[IO.Path]::DirectorySeparatorChar
+if(!$releaseAssets.StartsWith($releaseRoot,[StringComparison]::OrdinalIgnoreCase)){throw 'Unexpected build assets path'}
+if(Test-Path -LiteralPath $releaseAssets){Remove-Item -LiteralPath $releaseAssets -Recurse -Force}
 New-Item -ItemType Directory -Force build/classes,build/dex,build/assets | Out-Null
 Copy-Item ../coast-rush/dist/* build/assets -Force -Recurse
 (Get-Content build/assets/style.css -Raw) -replace "@import url\([^;]+;",'' | Set-Content build/assets/style.css -Encoding utf8
