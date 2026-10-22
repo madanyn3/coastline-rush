@@ -1,5 +1,9 @@
 import {center,slope} from './track.js';
 const cache=new Map();
+const smooth=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t);};
+// Physics advances in road metres, not arc length. Chord length alone saves only
+// milliseconds; give the cut a useful race-distance advantage, eased at merges.
+export function shortcutProgressFactor(path,d){const merge=18;return 1+(Math.max(1.4,path.factor)-1)*smooth((d-path.entry)/merge)*smooth((path.exit+16-d)/merge);}
 export function shortcutOffset(path,d){if(!path||d<path.start||d>path.end)return 0;return path.first+(d-path.start)*path.chordSlope-center(d,path.profile);}
 export function shortcutsFor(profile,length=3000){if(!profile||profile.includes('career'))return [];const key=profile+'|'+length;if(cache.has(key))return cache.get(key);
  const city=profile.startsWith('city-'),coast=!city&&!profile.startsWith('mountain-');const paths=[];for(let sector=0;sector<length-600;sector+=3000){let best=null;
@@ -13,6 +17,8 @@ export function shortcutGate(profile,d,side,length=3000){return shortcutsFor(pro
 export function shortcutClearance(profile,x,d,padding=3.6,length=3000){return shortcutsFor(profile,length).some(p=>d>p.start&&d<p.end&&Math.abs(shortcutOffset(p,d))>3&&Math.abs(x-shortcutOffset(p,d))<padding);}
 export function shortcutBounds(s){if(s.gameMode!=='race')return null;let path=s.shortcutActive;
  if(path&&(s.distance>=path.exit+16||s.distance>path.entry+30&&Math.abs(shortcutOffset(path,s.distance))<3.4)){s.shortcutActive=null;s.shortcutsCompleted=(s.shortcutsCompleted||0)+1;path=null;}
- if(!path){path=shortcutsFor(s.trackProfile,s.raceLength||3000).find(p=>s.distance>=p.entry-12&&s.distance<p.entry+18&&s.x*p.side>3.8&&Math.abs(s.x-shortcutOffset(p,s.distance))<1.5);if(path){s.shortcutActive=path;s.shortcutUses=(s.shortcutUses||0)+1;}}
- if(!path)return null;const x=shortcutOffset(path,s.distance);return {min:x-1.35,max:x+1.35,factor:path.factor};
+ if(!path){path=shortcutsFor(s.trackProfile,s.raceLength||3000).find(p=>s.distance>=p.entry-12&&s.distance<p.entry+18&&s.x*p.side>3.5&&Math.abs(s.x-shortcutOffset(p,s.distance))<1.2);if(path){s.shortcutActive=path;s.shortcutUses=(s.shortcutUses||0)+1;}}
+ if(!path)return null;const x=shortcutOffset(path,s.distance);return {min:x-1.35,max:x+1.35,factor:shortcutProgressFactor(path,s.distance)};
 }
+
+

@@ -15,15 +15,15 @@ Earn game coins to buy and upgrade cars, change their paint and unlock weather w
 
 ## Android download
 
-Version **1.35**, Android **6.0+**, approximately **128 MB** download. Landscape play with tilt or touch-button steering. The game assets are included for offline play. Hardware performance varies; older phones may struggle with the detailed scenery.
+Version **1.36**, Android **6.0+**, approximately **128 MB** download. Landscape play with tilt or touch-button steering. The game assets are included for offline play. Hardware performance varies; older phones may struggle with the detailed scenery.
 
 Download the APK and open it on your Android phone. Follow Android's installation prompts for your browser or file manager. If installation is blocked, report the exact message and your Android version.
 
 Existing testers should install over the previous version to keep local progress. Do not uninstall or clear app storage to update. Saves stay on this device; Android and browser saves are separate, and there is no cloud sync. Export/import backups are available in Driver Hub.
 
-## New in 1.35
+## New in 1.36
 
-Graphics presets for lighter phones, adjustable tilt and corner assist, a guided first drive, smarter rivals, drift nitro, a mountain tunnel, milestones and save backups. Open Driver Hub from the startup page.
+Off-road shortcuts now save useful time when driven cleanly. Entry and exit advantages ease smoothly, light shortcut rail brushes cost less speed, and bumps, hops and obstacles remain. Includes all previous Driver Hub improvements.
 
 ## Controls
 
@@ -43,3 +43,4 @@ We're especially interested in steering feel, pedal responsiveness, frame rate, 
 ## Credits
 
 Third-party model and texture credits are included with the game. Car model attribution is available from the garage. Fictional car names do not imply endorsement by vehicle manufacturers or asset creators.
+

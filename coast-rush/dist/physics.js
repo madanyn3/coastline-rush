@@ -100,7 +100,9 @@ export function step(s,input,dt,random=Math.random){
  smoothBoostSpeed(s,limit,stripActive&&nitroActive?'combo':nitroActive?'nitro':stripActive?'strip':draftActive?'draft':null,dt,input.gas?(s.acceleration||52):-7,input.brake);
  const branch=shortcutBounds(s),edge=laneLimit(s.routeId,s.distance),steering=smoothSteering(s.steering,input.steer,dt),targetForce=branch?0:curveDrift(s.distance,s.speed,s.trackProfile||s.gameMode)*(s.cornerAssist===false?1:.5);s.curveForce=(s.curveForce||0)+(targetForce-(s.curveForce||0))*(1-Math.exp(-dt/.24));const lateralSpeed=steering.average*steeringRate(s.speed)*(s.handling||1)+(branch?0:s.curveForce),desired=s.x+lateralSpeed*dt,wasRail=s.rail;
  s.steering=steering.value;s.rail=desired<(branch?.min??-edge)||desired>(branch?.max??edge);s.x=clamp(desired,branch?.min??-edge,branch?.max??edge);
- if(s.rail){clearSlipstream(s);if(!wasRail){s.speed*=.82;s.railHits=(s.railHits||0)+1;}s.speed=Math.max(0,s.speed-(35+s.speed*.35)*dt);}
+ // Narrow shortcut rails forgive a brief brush; sustained scraping still costs
+ // speed. Keep the stronger circuit barrier penalty on the main road.
+ if(s.rail){clearSlipstream(s);if(!wasRail){s.speed*=branch?.96:.82;s.railHits=(s.railHits||0)+1;}s.speed=Math.max(0,s.speed-(branch?8+s.speed*.06:35+s.speed*.35)*dt);}
  const meters=s.speed/3.6*dt*(branch?.factor||1);s.distance+=meters;s.sinceSpawn+=meters;if(branch)s.x+=shortcutOffset(s.shortcutActive,s.distance)-shortcutOffset(s.shortcutActive,oldDistance);
  if(s.gameMode!=='career'){stripPickup(s,s,'player',oldDistance);raceFeatures(s,s,'player',oldDistance);for(const strip of s.boostStrips)strip.z=strip.distance-s.distance;}
  updateShortcutTerrain(s,oldDistance);
